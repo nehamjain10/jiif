@@ -1,12 +1,14 @@
 import os
 import glob
+from pandas import concat
 import tqdm
 import random
 import tensorboardX
-
+import imageio
 import numpy as np
 import time
 import matplotlib.pyplot as plt
+import cv2
 
 import torch
 import torch.nn as nn
@@ -336,15 +338,32 @@ class Trainer(object):
                 
                 data = self.prepare_data(data)
                 preds = self.test_step(data)
+                
+                hr_thermals =  data["hr_depth"].detach().cpu().numpy()
+                lr_thermals =  data["lr"].detach().cpu().numpy()
+                rgb_images =  data["image_copy"].detach().cpu().numpy()
 
                 preds = preds.detach().cpu().numpy() # [B, 1, H, W]
 
                 for b in range(preds.shape[0]):
                     idx = data['idx'][b]
+                    thermal_hr = hr_thermals[b][0]
+                    thermal_lr = lr_thermals[b][0]
+                    thermal_lr = np.array(Image.fromarray(thermal_lr).resize((thermal_hr.shape[1], thermal_hr.shape[0]), Image.BICUBIC))
+                    image = rgb_images[b]
                     if not isinstance(idx, str):
                         idx = str(idx.item())
                     pred = preds[b][0]
-                    plt.imsave(os.path.join(save_path, f'{idx}.png'), pred, cmap='plasma')
+                    
+                    print(image.shape)
+                    pred = np.stack((pred,)*3, axis=-1)
+                    thermal_hr = np.stack((thermal_hr,)*3, axis=-1)
+                    thermal_lr = np.stack((thermal_lr,)*3, axis=-1)
+                    pred = (pred-pred.min())/(pred.max()-pred.min())
+
+
+                    concat_image = np.concatenate((image,thermal_hr,thermal_lr,pred),axis=1)
+                    imageio.imwrite(os.path.join(save_path, f'{idx}.png'), concat_image)
 
                 pbar.update(loader.batch_size)
 

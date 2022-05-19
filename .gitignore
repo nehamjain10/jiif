@@ -1,1 +1,7 @@
 *.pth
+__*
+data/*
+datasets/results/*
+*.png
+*.tar
+workspace/*

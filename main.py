@@ -13,11 +13,11 @@ parser.add_argument('--name', type=str, default='jiif')
 parser.add_argument('--model', type=str, default='JIIF')
 parser.add_argument('--loss', type=str, default='L1')
 parser.add_argument('--seed', type=int, default=0)
-parser.add_argument('--dataset', type=str, default='NYU')
-parser.add_argument('--data_root', type=str, default='./data/nyu_labeled/')
+parser.add_argument('--dataset', type=str, default='FLIR_ADAS')
+parser.add_argument('--data_root', type=str, default='/home/neham/thermal_datasets/FLIR_PAIRED/')
 parser.add_argument('--train_batch', type=int, default=1)
 parser.add_argument('--test_batch', type=int, default=1)
-parser.add_argument('--num_workers', type=int, default=8)
+parser.add_argument('--num_workers', type=int, default=12)
 parser.add_argument('--epoch', default=100, type=int, help='max epoch')
 parser.add_argument('--eval_interval',  default=10, type=int, help='eval interval')
 parser.add_argument('--checkpoint',  default='scratch', type=str, help='checkpoint to use')
@@ -67,6 +67,8 @@ elif args.dataset == 'Middlebury':
     dataset = MiddleburyDataset
 elif args.dataset == 'NoisyMiddlebury':
     dataset = NoisyMiddleburyDataset
+elif args.dataset == "FLIR_ADAS":
+    dataset = FLIR_ADASDataset
 else:
     raise NotImplementedError(f'Dataset {args.loss} not found')
 
