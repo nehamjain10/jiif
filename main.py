@@ -7,17 +7,18 @@ import torch.nn.functional as F
 from utils import *
 from datasets import *
 from models import *
+import wandb
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--name', type=str, default='jiif')
 parser.add_argument('--model', type=str, default='JIIF')
 parser.add_argument('--loss', type=str, default='L1')
 parser.add_argument('--seed', type=int, default=0)
-parser.add_argument('--dataset', type=str, default='FLIR_ADAS')
-parser.add_argument('--data_root', type=str, default='/home/neham/thermal_datasets/FLIR_PAIRED/')
+parser.add_argument('--dataset', type=str, default='LLVIP')
+parser.add_argument('--data_root', type=str, default='/home/datasets/thermal_datasets/LLVIP_Paired/')
 parser.add_argument('--train_batch', type=int, default=1)
 parser.add_argument('--test_batch', type=int, default=1)
-parser.add_argument('--num_workers', type=int, default=12)
+parser.add_argument('--num_workers', type=int, default=20)
 parser.add_argument('--epoch', default=100, type=int, help='max epoch')
 parser.add_argument('--eval_interval',  default=10, type=int, help='eval interval')
 parser.add_argument('--checkpoint',  default='scratch', type=str, help='checkpoint to use')
@@ -33,10 +34,13 @@ parser.add_argument('--test',  action='store_true', help='test mode')
 parser.add_argument('--report_per_image',  action='store_true', help='report RMSE of each image')
 parser.add_argument('--save',  action='store_true', help='save results')
 parser.add_argument('--batched_eval',  action='store_true', help='batched evaluation to avoid OOM for large image resolution')
+parser.add_argument('--workspace',  default="workspace_llvip", type=str, help='workspace_to_save_model')
 
 args = parser.parse_args()
 
 seed_everything(args.seed)
+
+wandb.init(project="thermal_GSR", name="jiif_llvip", config=args,save_code=True,notes="Using LLVIP dataset 8x super resolution")
 
 # model
 if args.model == 'DKN':
@@ -69,6 +73,8 @@ elif args.dataset == 'NoisyMiddlebury':
     dataset = NoisyMiddleburyDataset
 elif args.dataset == "FLIR_ADAS":
     dataset = FLIR_ADASDataset
+elif args.dataset == "LLVIP":
+    dataset = LLVIPDataset
 else:
     raise NotImplementedError(f'Dataset {args.loss} not found')
 
@@ -94,15 +100,13 @@ if not args.test:
     scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=args.lr_step, gamma=args.lr_gamma)
     trainer = Trainer(args, args.name, model, objective=criterion, optimizer=optimizer, lr_scheduler=scheduler, metrics=[RMSEMeter(args)], device='cuda', use_checkpoint=args.checkpoint, eval_interval=args.eval_interval)
 else:
-    trainer = Trainer(args, args.name, model, objective=criterion, metrics=[RMSEMeter(args)], device='cuda', use_checkpoint=args.checkpoint)
+    trainer = Trainer(args, args.name, model, objective=criterion, metrics=[RMSEMeter(args)], device='cuda', use_checkpoint=args.checkpoint,workspace=args.workspace)
 
 # main
 if not args.test:
     trainer.train(train_loader, test_loader, args.epoch)
 
 if args.save:
-    # save results (doesn't need GT)
     trainer.test(test_loader)
 else:
-    # evaluate (needs GT)
     trainer.evaluate(test_loader)

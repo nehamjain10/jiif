@@ -9,7 +9,7 @@ import numpy as np
 import time
 import matplotlib.pyplot as plt
 import cv2
-
+import wandb 
 import torch
 import torch.nn as nn
 import torch.optim as optim
@@ -355,7 +355,6 @@ class Trainer(object):
                         idx = str(idx.item())
                     pred = preds[b][0]
                     
-                    print(image.shape)
                     pred = np.stack((pred,)*3, axis=-1)
                     thermal_hr = np.stack((thermal_hr,)*3, axis=-1)
                     thermal_lr = np.stack((thermal_lr,)*3, axis=-1)
@@ -411,7 +410,7 @@ class Trainer(object):
             
             data = self.prepare_data(data)
             preds, truths, loss = self.train_step(data)
-
+        
             with amp.scale_loss(loss, self.optimizer) as scaled_loss:
                 scaled_loss.backward()
 
@@ -420,7 +419,7 @@ class Trainer(object):
 
             if self.scheduler_update_every_step:
                 self.lr_scheduler.step()
-
+            
             total_loss.append(loss.item())
             if self.local_rank == 0:
                 for metric in self.metrics:

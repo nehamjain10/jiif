@@ -25,8 +25,8 @@ def to_pixel_samples(depth):
     pixel = depth.view(-1, 1) # [H*W, 1]
     return coord, pixel
 
-class FLIR_ADASDataset(Dataset):
-    def __init__(self, root='~/thermal_datasets/FLIR_PAIRED', split='train', scale=8, augment=True, downsample='bicubic', pre_upsample=False, to_pixel=False, sample_q=None, input_size=None, noisy=False):
+class LLVIPDataset(Dataset):
+    def __init__(self, root='~/thermal_datasets/LLVIP', split='train', scale=8, augment=True, downsample='bicubic', pre_upsample=False, to_pixel=False, sample_q=None, input_size=None, noisy=False):
         super().__init__()
         self.root = root
         self.split = split
@@ -185,7 +185,7 @@ if __name__ == '__main__':
     for method in ['bicubic']:
         for scale in [4, 8, 16]:
             print(f'[INFO] scale = {scale}, method = {method}')
-            d = FLIR_ADASDataset(root='/home/neham/thermal_datasets/FLIR_PAIRED', split='test', pre_upsample=True, augment=False, scale=scale, downsample=method, noisy=False)
+            d = LLVIPDataset(root='/home/neham/thermal_datasets/FLIR_PAIRED', split='test', pre_upsample=True, augment=False, scale=scale, downsample=method, noisy=False)
             rmses = []
             for i in tqdm.trange(len(d)):
                 x = d[i]
